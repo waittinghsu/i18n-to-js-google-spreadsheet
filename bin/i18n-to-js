@@ -1,0 +1,14 @@
+#!/usr/bin/env node
+
+const path = require('path')
+const option = require(path.resolve(process.cwd(), 'excel-js.config.js'))
+const core = require('../src/index')
+
+console.log('google excel 擷取中...')
+core(option)
+  .then(() => {
+    console.log('生成完成 🎉')
+  })
+  .catch(err => {
+    console.error('媽逼炸了' + err)
+  })

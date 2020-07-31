@@ -1,0 +1,35 @@
+{
+  "name": "google-spreadsheet-to-js",
+  "version": "0.0.1",
+  "description": "將線上excel表格轉成 object js",
+  "main": "index.js",
+  "scripts": {
+    "pretty": "prettier --write \"./**/*.{js,jsx,json}\""
+  },
+  "bin": {
+    "yapi-js": "./bin/yapi-js"
+  },
+  "keywords": [
+    "excel js api",
+    "google-spreadsheet"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/waittinghsu/google-spreadsheet-to-js.git"
+  },
+  "author": "waitting",
+  "license": "MIT",
+  "dependencies": {
+    "lodash": "^4.17.19",
+    "prettier": "^2.0.5"
+  },
+  "devDependencies": {
+    "ajv": "^6.9.1",
+    "ava": "^3.8.2",
+    "rewire": "^4.0.1"
+  },
+  "bugs": {
+    "url": "https://github.com/waittinghsu/google-spreadsheet-to-js/issues"
+  },
+  "homepage": "https://github.com/waittinghsu/google-spreadsheet-to-js#readme"
+}
