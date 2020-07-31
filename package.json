@@ -22,6 +22,7 @@
   "author": "waitting_omega",
   "license": "MIT",
   "dependencies": {
+    "google-spreadsheet": "^3.0.11",
     "lodash": "^4.17.19",
     "prettier": "^2.0.5",
     "pretty": "^2.0.0"
