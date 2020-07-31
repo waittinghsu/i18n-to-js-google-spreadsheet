@@ -11,6 +11,7 @@
     "yapi-js": "./bin/i18n-to-js"
   },
   "keywords": [
+    "i18n",
     "excel js api",
     "google-spreadsheet"
   ],
