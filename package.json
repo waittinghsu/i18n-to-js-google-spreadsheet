@@ -4,10 +4,11 @@
   "description": "將線上excel表格轉成 object js",
   "main": "index.js",
   "scripts": {
-    "pretty": "prettier --write \"./**/*.{js,jsx,json}\""
+    "pretty": "prettier --write \"./**/*.{js,jsx,json}\"",
+    "test": ""
   },
   "bin": {
-    "yapi-js": "./bin/yapi-js"
+    "yapi-js": "./bin/i18n-to-js"
   },
   "keywords": [
     "excel js api",
@@ -21,7 +22,8 @@
   "license": "MIT",
   "dependencies": {
     "lodash": "^4.17.19",
-    "prettier": "^2.0.5"
+    "prettier": "^2.0.5",
+    "pretty": "^2.0.0"
   },
   "devDependencies": {
     "ajv": "^6.9.1",
