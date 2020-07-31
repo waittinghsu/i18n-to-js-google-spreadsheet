@@ -1,6 +1,6 @@
 {
-  "name": "i18n-to-js-google-spreadsheet",
-  "version": "0.0.1",
+  "name": "excel-to-js-google-spreadsheet",
+  "version": "0.0.2",
   "description": "將線上excel表格轉成 object js",
   "main": "index.js",
   "scripts": {
@@ -8,7 +8,7 @@
     "test": ""
   },
   "bin": {
-    "yapi-js": "./bin/i18n-to-js"
+    "i18n-js": "./bin/i18n-to-js"
   },
   "keywords": [
     "i18n",
@@ -17,7 +17,7 @@
   ],
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/waittinghsu/i18n-to-js-google-spreadsheet.git"
+    "url": "https://github.com/waittinghsu/i18n-to-js-google-spreadsheet.git"
   },
   "author": "waitting_omega",
   "license": "MIT",
