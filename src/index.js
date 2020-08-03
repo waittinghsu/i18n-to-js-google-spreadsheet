@@ -75,7 +75,7 @@ async function getExcel() {
   //         rowItem.forEach(item => {
   //           columnKey[item.a1Column] = item.formattedValue;
   //         });
-  //       } else {
+  //     e {
   //         let keyQ = '';
   //         rowItem.forEach(item => {
   //           if (item.a1Column === 'A') {
@@ -93,9 +93,9 @@ async function getExcel() {
 }
 
 async function mkFile(info, fileName) {
-  await deleteDir("src/i18n/lang"); // 先刪除指定資料夾
-  await mkDirByPathSync("src/i18n/lang"); // 再重新創建資料夾
-  fs.writeFile(`src/i18n/lang/${fileName}.js`, info, function (err) {
+  await deleteDir(config.distFolder); // 除指定資料夾
+  await mkDirByPathSync(config.distFolder); // 再重新創建資料夾
+  fs.writeFile(`${config.distFolder}/${fileName}.js`, info, function (err) {
     if (err) {
       console.log(err);
     } else {
