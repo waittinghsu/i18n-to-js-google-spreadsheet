@@ -1,15 +1,18 @@
 #!/usr/bin/env node
+const configPath = process.argv[2];
+const loadPath = !!configPath ? configPath.split('=')[1] : process.cwd();
 
 const path = require('path')
-const option = require(path.resolve(process.cwd(), 'i18n-to-js.config.js'))
+const option = require(path.resolve(loadPath, 'i18n-to-js.config.js'))
 const core = require('../src/index')
 
-console.log('google excel 擷取中...')
+console.log('🐢 🐢 google excel 擷取中 🐢🐢🐢 🧗...')
+
 core(option)
   .then(() => {
-    console.log('生成完成 🎉')
+    console.log('🎉 生成完成 🎉')
   })
   .catch(err => {
-    console.error('媽逼炸了' + err)
+    console.error('👹 媽逼炸了‍' + err)
   })
 
