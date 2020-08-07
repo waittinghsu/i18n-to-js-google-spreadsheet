@@ -8,7 +8,7 @@
 |  key   |  zh-CN	|    en   |
 | ------ | ------ | ------- |
 | login  |   登入  | LOGIN   |
-|  |   登出  | LOGOUT  |
+| logout |   登出  | LOGOUT  |
 
 =>
 ### zh-CN.js
