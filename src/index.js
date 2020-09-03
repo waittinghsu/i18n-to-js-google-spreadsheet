@@ -74,15 +74,14 @@ async function parseExcel(mySheet, findSheet = []) {
         // 取得列表資料
         await sheet.getRows().then((sheetData) => {
           _.forEach(sheetData, (row, index) => {
-            if (!row.key) {
-              return false;
+            if (row.key) {
+              _.map(output, (fileCollection, fileKey) => {
+                // todo 物件版本 key唯一
+                // fileCollection[row.key] = row[fileKey];
+                // todo 陣列版本 全塞
+                fileCollection.push({ key: row.key, text: row[fileKey] });
+              });
             }
-            _.map(output, (fileCollection, fileKey) => {
-              // todo 物件版本 key唯一
-              // fileCollection[row.key] = row[fileKey];
-              // todo 陣列版本 全塞
-              fileCollection.push({ key: row.key, text: row[fileKey] });
-            });
           });
         });
       }
@@ -125,6 +124,7 @@ async function getExcel() {
   const mySheet = new GoogleSpreadsheet(config.excelProjectToken);
   mySheet.useApiKey(config.useApiKey);
   await mySheet.loadInfo(1); // loads document properties and worksheets
+  console.log('google sheet api 擷取完成 ..')
   return mySheet;
 }
 
@@ -140,7 +140,7 @@ async function getExcel() {
  * @date 2020-08-05 */
 async function mkFile(distPath, content, fileName) {
   await mkDirByPathSync(distPath); // 再重新創建資料夾
-  fs.writeFile(`${distPath}/${fileName}.js`, content, function (err) {
+  fs.writeFile(`${distPath}/${fileName}.js`, content, err => {
     if (err) {
       console.log(err);
     } else {
