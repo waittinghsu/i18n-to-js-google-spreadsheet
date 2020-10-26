@@ -14,3 +14,5 @@ tests/**/coverage/
 *.njsproj
 *.sln
 vscode/
+i18n-to-js.config.js
+src/test.js

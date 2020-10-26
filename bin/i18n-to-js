@@ -4,7 +4,7 @@ const loadPath = !!configPath ? configPath.split('=')[1] : process.cwd();
 
 const path = require('path')
 const option = require(path.resolve(loadPath, 'i18n-to-js.config.js'))
-const core = require('../src/index')
+const core = require('../src/lib/index')
 
 console.log('🐢 🐢 google excel 擷取中 🐢🐢🐢 🧗...')
 
