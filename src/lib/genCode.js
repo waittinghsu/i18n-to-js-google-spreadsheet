@@ -1,8 +1,24 @@
-const fs = require("fs");
-const path = require("path");
 const _ = require("lodash");
 
-module.exports = function genCode(interfaceList) {
+/**
+ *
+ * @param {Object} Obj {key: value}
+ * @return {string}
+ */
+const genCodeByObj => (interfaceList) {
+  let code = "";
+  // code = `/* eslint-disable */\n`;
+  code += `export default ${JSON.stringify(Obj, undefined, 2).replaceAll('"', '\'')};\n`;
+ // console.log(code)
+  return code;
+};
+
+/**
+ *
+ * @param {Array<Object>} interfaceList [{key: '', text: ''}]
+ * @return {string}
+ */
+const genCodeByArrayObj => (interfaceList) {
   let code = "";
   // code = `/* eslint-disable */\n`;
   code += `export default {`;
@@ -18,3 +34,5 @@ module.exports = function genCode(interfaceList) {
   code += `};\n`;
   return code;
 };
+
+module.exports = { genCodeByArrayObj, genCodeByObj };
