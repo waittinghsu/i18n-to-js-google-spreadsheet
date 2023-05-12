@@ -1,15 +1,19 @@
 const fs = require("fs");
 const path = require("path");
 
-module.exports = function deleteDir(url) {
+/**
+ * 刪除路徑
+ * @param {String} deletePath
+ */
+module.exports = function deleteDir(deletePath) {
   var files = [];
 
-  if (fs.existsSync(url)) {
+  if (fs.existsSync(deletePath)) {
     // 判定給定路徑是否存在
 
-    files = fs.readdirSync(url); // 返回文件和子目錄的陣列
+    files = fs.readdirSync(deletePath); // 返回文件和子目錄的陣列
     files.forEach(function (file, index) {
-      var curPath = path.join(url, file);
+      var curPath = path.join(deletePath, file);
 
       if (fs.statSync(curPath).isDirectory()) {
         // 同步讀取資料夾內資料，如果為資料夾，則回調自身
@@ -19,6 +23,6 @@ module.exports = function deleteDir(url) {
       }
     });
 
-    fs.rmdirSync(url); // 資料夾
+    fs.rmdirSync(deletePath); // 資料夾
   }
 };
