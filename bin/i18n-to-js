@@ -2,17 +2,24 @@
 const configPath = process.argv[2];
 const loadPath = !!configPath ? configPath.split('=')[1] : process.cwd();
 
-const path = require('path')
-const option = require(path.resolve(loadPath, 'i18n-to-js.config.js'))
-const core = require('../src/lib/index')
+const path = require('path');
+const option = require(path.resolve(loadPath, 'i18n-to-js.config.js'));
+const { coreForGoogle, coreForLocal } = require('../src/lib/index');
 
-console.log('🐢 🐢 google excel 擷取中 🐢🐢🐢 🧗...')
+console.log('🐢 🐢 google excel 擷取中 🐢🐢🐢 🧗...');
+const { mode = 'LOCAL' } = option;
 
-core(option)
-  .then(() => {
-    console.log('🎉 生成完成 🎉')
-  })
-  .catch(err => {
-    console.error('👹 媽逼炸了‍' + err)
-  })
-
+switch (mode) {
+  case 'LOCAL':
+    coreForLocal(option);
+    break;
+  case 'GOOGLE_SHEET':
+    coreForGoogle(option).then(() => {
+      console.log('🎉 生成完成 🎉');
+    }).catch((err) => {
+      console.error(`👹 媽逼炸了‍${err}`);
+    });
+    break;
+  default:
+    break;
+}
