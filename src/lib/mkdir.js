@@ -1,15 +1,15 @@
-const fs = require("fs");
-const path = require("path");
+const fs = require('fs');
+const path = require('path');
 
 module.exports = function mkDirByPathSync(
   targetDir,
-  { isRelativeToScript = false } = {}
+  { isRelativeToScript = false } = {},
 ) {
-  const sep = path.sep;
+  const { sep } = path;
 
-  const initDir = path.isAbsolute(targetDir) ? sep : "";
+  const initDir = path.isAbsolute(targetDir) ? sep : '';
 
-  const baseDir = isRelativeToScript ? __dirname : ".";
+  const baseDir = isRelativeToScript ? __dirname : '.';
 
   targetDir.split(sep).reduce((parentDir, childDir) => {
     const curDir = path.resolve(baseDir, parentDir, childDir);
@@ -17,7 +17,7 @@ module.exports = function mkDirByPathSync(
     try {
       fs.mkdirSync(curDir);
     } catch (err) {
-      if (err.code !== "EEXIST") {
+      if (err.code !== 'EEXIST') {
         throw err;
       }
       // console.log(`Directory ${curDir} already exists!`);
