@@ -111,9 +111,29 @@ async parseLocalExcel(mySheetData, findSheet = []) {
     headerKeys = headerKeys.filter((headerKey) => headerKey !== 'key'); //移除關鍵字key e.g. ['key', 'en', 'zh-cn']  => ['en', 'zh-cn']
     // 建立 headerKey 的 Object 格式作為初始化 return {en: {}}
     const headerObj = headerKeys.reduce((accHeader, headerK)=> ({ ...accHeader, [headerK]: {} }), {});
+    // Array[Object] 表格sheet 內容 [{key: x, en: '??', 'zh-cn': 'XX' }, .....]
+    const sheetRows = XLSX.utils.sheet_to_json(Sheets[sheetName], { header: 0 });
+    // 新組合語系資料
+    const sheetData = sheetRows.reduce(
+      (sheetAcc, sheetItem) =>{
+        headerKeys.forEach((headerKey) => {
+          sheetAcc[headerKey] ||= {};
+          Object.assign(sheetAcc[headerKey], { [sheetItem.key]: sheetItem[headerKey] });
+        });
+        return sheetAcc;
+      },
+      { ...headerObj },
+    );
     
+    headerKeys.forEach((headerKey) => {
+      mergeLang[headerKey] ||= {};
+      Object.assign(mergeLang[headerKey], { ...sheetData[headerKey] });
+    });
+    
+    return mergeLang
   }, {})
 }
+
 module.exports = {
   getGoogleExcel, parseGoogleExcel, getLocalExcel, parseLocalExcel,
 };
