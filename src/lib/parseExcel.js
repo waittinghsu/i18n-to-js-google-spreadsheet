@@ -115,9 +115,9 @@ async parseLocalExcel(mySheetData, findSheet = []) {
     const sheetRows = XLSX.utils.sheet_to_json(Sheets[sheetName], { header: 0 });
     // 新組合語系資料
     const sheetData = sheetRows.reduce(
-      (sheetAcc, sheetItem) =>{
+      (sheetAcc, sheetItem) => {
         headerKeys.forEach((headerKey) => {
-          sheetAcc[headerKey] ||= {};
+          sheetAcc[headerKey] ||= {}; // 初始化
           Object.assign(sheetAcc[headerKey], { [sheetItem.key]: sheetItem[headerKey] });
         });
         return sheetAcc;
