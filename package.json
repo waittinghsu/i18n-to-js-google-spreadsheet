@@ -29,7 +29,8 @@
     "google-spreadsheet": "^3.0.11",
     "lodash": "^4.17.19",
     "prettier": "^2.0.5",
-    "pretty": "^2.0.0"
+    "pretty": "^2.0.0",
+    "xlsx": "^0.14.1"
   },
   "devDependencies": {
     "ajv": "^6.9.1",
