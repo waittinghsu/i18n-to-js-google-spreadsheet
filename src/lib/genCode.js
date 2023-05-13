@@ -5,10 +5,10 @@ const _ = require("lodash");
  * @param {Object} Obj {key: value}
  * @return {string}
  */
-const genCodeByObj => (interfaceList) {
+const genCodeByObj = (Obj = {}) => {
   let code = "";
   // code = `/* eslint-disable */\n`;
-  code += `export default ${JSON.stringify(Obj, undefined, 2).replaceAll('"', '\'')};\n`;
+  code += `export default ${JSON.stringify(Obj, undefined, 2)};\n`;
  // console.log(code)
   return code;
 };
@@ -18,7 +18,7 @@ const genCodeByObj => (interfaceList) {
  * @param {Array<Object>} interfaceList [{key: '', text: ''}]
  * @return {string}
  */
-const genCodeByArrayObj => (interfaceList) {
+const genCodeByArrayObj = (interfaceList) => {
   let code = "";
   // code = `/* eslint-disable */\n`;
   code += `export default {`;

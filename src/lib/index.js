@@ -55,9 +55,8 @@ async function coreForLocal(option = {}) {
   checkConfig(config);
   await deleteDir(config.distFolder); // 除指定資料夾
   const { sheet: findSheet } = config;
-  const fileData = getLocalExcel(config);
+  const fileData = await getLocalExcel(config);
   const fileContent = await parseLocalExcel(fileData, findSheet);
-  //console.log('fileContent', fileContent);
   await Promise.all(Object.keys(fileContent).map((fileName) => {
     mkFile(config.distFolder, genCodeByObj(fileContent[fileName]), fileName);
     return fileName;
@@ -94,7 +93,7 @@ function checkConfig(config) {
     GOOGLE_SHEET: ['excelProjectToken', 'useApiKey', 'sheet'],
     LOCAL: ['sourceFilePath', 'distFolder', 'sheet'],
   };
-  
+
   const findEmpty = _.pickBy(config, (value, configKey) => {
     return rules[mode].includes(configKey) && _.isEmpty(value);
   });

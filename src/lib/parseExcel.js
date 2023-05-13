@@ -90,7 +90,7 @@ async function parseGoogleExcel(mySheet, findSheet = []) {
  * @brief 讀取excel
  * @return {Object}
  * @date 2023-05-20 */
-async function getLocalExcel(config) {
+const getLocalExcel = async(config) => {
   const { sourceFilePath } = config;
   return XLSX.readFile(sourceFilePath, { type: 'array' })
 }
@@ -102,9 +102,9 @@ async function getLocalExcel(config) {
  * 2. getRows 建立多國語系mapping 物件
  * @return {Object}  { en: {}, 'zh-CN': {} }
  * @date 2020-07-31 */
-async parseLocalExcel(mySheetData, findSheet = []) {
-  const { SheetName, Sheets } = mySheetData;
-  const isExistSheets = findSheet.filter((configSheetName) => SheetName.includes(configSheetName));
+const parseLocalExcel = async (mySheetData, findSheet = []) => {
+  const { SheetNames, Sheets } = mySheetData;
+  const isExistSheets = findSheet.filter((configSheetName) => SheetNames.includes(configSheetName));
   return isExistSheets.reduce((mergeLang, sheetName) => {
     // header: 1 回傳的array 第一筆為所有column的第一筆資料 定義為key
     let [headerKeys] = XLSX.utils.sheet_to_json(Sheets[sheetName], { header: 1 });
@@ -117,19 +117,19 @@ async parseLocalExcel(mySheetData, findSheet = []) {
     const sheetData = sheetRows.reduce(
       (sheetAcc, sheetItem) => {
         headerKeys.forEach((headerKey) => {
-          sheetAcc[headerKey] ||= {}; // 初始化
+          sheetAcc[headerKey] || (sheetAcc[headerKey] = {}); // 初始化
           Object.assign(sheetAcc[headerKey], { [sheetItem.key]: sheetItem[headerKey] });
         });
         return sheetAcc;
       },
       { ...headerObj },
     );
-    
+
     headerKeys.forEach((headerKey) => {
-      mergeLang[headerKey] ||= {};
+      mergeLang[headerKey] || (mergeLang[headerKey] = {});
       Object.assign(mergeLang[headerKey], { ...sheetData[headerKey] });
     });
-    
+
     return mergeLang
   }, {})
 }
