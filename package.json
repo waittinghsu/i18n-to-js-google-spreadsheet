@@ -1,6 +1,6 @@
 {
   "name": "excel-to-js-google-spreadsheet",
-  "version": "0.0.8",
+  "version": "1.0.0",
   "description": "將線上excel表格轉成 object js",
   "main": ".src/lib/index.js",
   "files": [
