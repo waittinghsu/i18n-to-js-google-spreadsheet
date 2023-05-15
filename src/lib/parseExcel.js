@@ -3,9 +3,9 @@ const {
   GoogleSpreadsheet,
   GoogleSpreadsheetWorksheet,
   GoogleSpreadsheetRow,
-} = require("google-spreadsheet");
-const XLSX =  require("xlsx");
-const _ = require("lodash");
+} = require('google-spreadsheet');
+const XLSX =  require('xlsx';
+const _ = require('lodash');
 
 /**
  * @brief 打 google sheet api
@@ -15,7 +15,7 @@ async function getGoogleExcel(config) {
   const mySheet = new GoogleSpreadsheet(config.excelProjectToken);
   mySheet.useApiKey(config.useApiKey);
   await mySheet.loadInfo(1); // loads document properties and worksheets
-  console.log('google sheet api 擷取完成 ..')
+  console.log('google sheet api 擷取完成 ..');
   return mySheet;
 }
 
@@ -37,7 +37,7 @@ async function parseGoogleExcel(mySheet, findSheet = []) {
           // _.filter(sheet.headerValues, text => text !== 'key').forEach(fileKey => (output[fileKey] = {}));
           // todo 陣列版本 全塞
           _.filter(sheet.headerValues, (text) => text !== "key").forEach(
-              (fileKey) => (output[fileKey] = [])
+              (fileKey) => (output[fileKey] = []),
           );
           // _.filter(sheet.headerValues, text => text !== 'key').forEach(fileKey => (output[fileKey] = []));
         });
@@ -56,7 +56,7 @@ async function parseGoogleExcel(mySheet, findSheet = []) {
         });
       }
       return sheet;
-    })
+    }),
   );
   // const columnKey = {}; // A: key, B: zh-CN,C: en, D: EU
   // _.each(mySheet.sheetsByIndex, sheet => {
@@ -92,7 +92,7 @@ async function parseGoogleExcel(mySheet, findSheet = []) {
  * @date 2023-05-20 */
 const getLocalExcel = async(config) => {
   const { sourceFilePath } = config;
-  return XLSX.readFile(sourceFilePath, { type: 'array' })
+  return XLSX.readFile(sourceFilePath, { type: 'array' });
 }
 
 /**
@@ -130,8 +130,8 @@ const parseLocalExcel = async (mySheetData, findSheet = []) => {
       Object.assign(mergeLang[headerKey], { ...sheetData[headerKey] });
     });
 
-    return mergeLang
-  }, {})
+    return mergeLang;
+  }, {});
 }
 
 module.exports = {
