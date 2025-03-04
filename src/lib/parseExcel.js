@@ -4,7 +4,8 @@ const {
   GoogleSpreadsheetWorksheet,
   GoogleSpreadsheetRow,
 } = require('google-spreadsheet');
-const XLSX =  require('xlsx';
+const ExcelJS = require('exceljs');
+const XLSX =  require('xlsx');
 const _ = require('lodash');
 
 /**
@@ -13,7 +14,7 @@ const _ = require('lodash');
  * @date 2020-07-31 */
 async function getGoogleExcel(config) {
   const mySheet = new GoogleSpreadsheet(config.excelProjectToken);
-  mySheet.useApiKey(config.useApiKey);
+  await mySheet.useApiKey(config.useApiKey);
   await mySheet.loadInfo(1); // loads document properties and worksheets
   console.log('google sheet api 擷取完成 ..');
   return mySheet;
@@ -58,81 +59,87 @@ async function parseGoogleExcel(mySheet, findSheet = []) {
       return sheet;
     }),
   );
-  // const columnKey = {}; // A: key, B: zh-CN,C: en, D: EU
-  // _.each(mySheet.sheetsByIndex, sheet => {
-  //   if (sheet.title === 'BMS') {
-  //     sheet._cells.forEach((rowItem, rowIndex) => {
-  //       if (!rowItem[0].formattedValue) {
-  //         return false;
-  //       }
-  //       if (rowIndex === 0) {
-  //         rowItem.forEach(item => {
-  //           columnKey[item.a1Column] = item.formattedValue;
-  //         });
-  //       else {
-  //         let keyQ = '';
-  //         rowItem.forEach(item => {
-  //           if (item.a1Column === 'A') {
-  //             keyQ = item.formattedValue;
-  //           }
-  //           if (item.a1Column !== 'A') {
-  //             output[columnKey[item.a1Column]][keyQ] = item.formattedValue;
-  //           }
-  //         });
-  //       }
-  //     });
-  //   }
-  // });
   return output;
 }
 
 /**
- * @brief 讀取excel
- * @return {Object}
- * @date 2023-05-20 */
-const getLocalExcel = async(config) => {
+ * 讀取本地 Excel 檔案
+ * @param {Object} config 配置對象
+ * @returns {Promise<ExcelJS.Workbook>} Excel 工作簿
+ */
+async function getLocalExcel(config) {
   const { sourceFilePath } = config;
-  return XLSX.readFile(sourceFilePath, { type: 'array' });
+  const workbook = new ExcelJS.Workbook();
+  await workbook.xlsx.readFile(sourceFilePath);
+  return workbook;
 }
 
 /**
- * @brief 解析Excel
- * Promise 搭配 map 用法 讓async await運作
- * 1. 擷取表頭 建立 output 檔名key 預設值
- * 2. getRows 建立多國語系mapping 物件
- * @return {Object}  { en: {}, 'zh-CN': {} }
- * @date 2020-07-31 */
-const parseLocalExcel = async (mySheetData, findSheet = []) => {
-  const { SheetNames, Sheets } = mySheetData;
-  const isExistSheets = findSheet.filter((configSheetName) => SheetNames.includes(configSheetName));
-  return isExistSheets.reduce((mergeLang, sheetName) => {
-    // header: 1 回傳的array 第一筆為所有column的第一筆資料 定義為key
-    let [headerKeys] = XLSX.utils.sheet_to_json(Sheets[sheetName], { header: 1 });
-    headerKeys = headerKeys.filter((headerKey) => headerKey !== 'key'); //移除關鍵字key e.g. ['key', 'en', 'zh-cn']  => ['en', 'zh-cn']
-    // 建立 headerKey 的 Object 格式作為初始化 return {en: {}}
-    const headerObj = headerKeys.reduce((accHeader, headerK)=> ({ ...accHeader, [headerK]: {} }), {});
-    // Array[Object] 表格sheet 內容 [{key: x, en: '??', 'zh-cn': 'XX' }, .....]
-    const sheetRows = XLSX.utils.sheet_to_json(Sheets[sheetName], { header: 0 });
-    // 新組合語系資料
-    const sheetData = sheetRows.reduce(
-      (sheetAcc, sheetItem) => {
-        headerKeys.forEach((headerKey) => {
-          sheetAcc[headerKey] || (sheetAcc[headerKey] = {}); // 初始化
-          Object.assign(sheetAcc[headerKey], { [sheetItem.key]: sheetItem[headerKey] });
-        });
-        return sheetAcc;
-      },
-      { ...headerObj },
-    );
+ * 解析 Excel 檔案，將多語系資料轉換為巢狀結構對象
+ *
+ * @param {ExcelJS.Workbook} mySheetData - Excel 工作簿實例
+ * @param {string[]} findSheet - 要處理的工作表名稱陣列
+ * @returns {Object} 解析後的多語系巢狀結構對象
+ */
+async function parseLocalExcel(mySheetData, findSheet = []) {
+  // 初始化最終語系合併結果的物件
+  const mergeLang = {};
 
-    headerKeys.forEach((headerKey) => {
-      mergeLang[headerKey] || (mergeLang[headerKey] = {});
-      Object.assign(mergeLang[headerKey], { ...sheetData[headerKey] });
+  // 取得所有工作表名稱
+  const sheetNames = mySheetData.worksheets.map(worksheet => worksheet.name);
+
+  // 過濾出存在於 Excel 中的指定工作表
+  const isExistSheets = findSheet.filter(configSheetName =>
+      sheetNames.includes(configSheetName),
+  );
+
+  // 遍歷每個匹配的工作表
+  for (const sheetName of isExistSheets) {
+    const worksheet = mySheetData.getWorksheet(sheetName);
+    // 獲取標題列
+    const headerRow = worksheet.getRow(1);
+    // 過濾並處理語系標題（排除 'key' 和空值）
+    const headerKeys = headerRow.values.filter(header => header && header !== 'key').slice(1);
+    // 初始化每種語系的基礎結構
+    headerKeys.forEach(lang => {
+      mergeLang[lang] = mergeLang[lang] || {};
     });
+    // 遍歷每一列資料（跳過標題列）
+    worksheet.eachRow((row, rowNumber) => {
+      if (rowNumber === 1) return;
+      // 取得當前列的 key 和結構
+      const key = row.getCell(1).value;
+      const structure = row.getCell(2).value;
 
-    return mergeLang;
-  }, {});
+      // 處理每種語系的單元格值
+      headerKeys.forEach((lang, index) => {
+        // 第三個之後 都算語言包代號
+        const cellValue = row.getCell(index + 3).value;
+        // 忽略空值
+        if (cellValue !== null && cellValue !== undefined) {
+          // 拆分結構路徑（支援多層巢狀）
+          const structureParts = structure.split('.');
+          // 指向當前語系的物件
+          let currentLangObj = mergeLang[lang];
+          // 動態創建巢狀結構
+          structureParts.forEach((part, idx) => {
+            // 最後一層：放置具體的鍵值對
+            if (idx === structureParts.length - 1) {
+              currentLangObj[part] = currentLangObj[part] || {};
+              currentLangObj[part][key] = cellValue;
+            } else {
+              // 中間層：創建物件結構
+              currentLangObj[part] = currentLangObj[part] || {};
+              currentLangObj = currentLangObj[part];
+            }
+          });
+        }
+      });
+    });
+  }
+  return mergeLang;
 }
+
 
 module.exports = {
   getGoogleExcel, parseGoogleExcel, getLocalExcel, parseLocalExcel,
