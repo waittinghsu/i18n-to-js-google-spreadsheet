@@ -108,15 +108,23 @@ async function parseLocalExcel(mySheetData, findSheet = []) {
     worksheet.eachRow((row, rowNumber) => {
       if (rowNumber === 1) return;
       // 取得當前列的 key 和結構
-      const key = row.getCell(1).value;
-      const structure = row.getCell(2).value;
+      const key = String(row.getCell(1).value || '').trim();
+      const structure = String(row.getCell(2).value || '').trim();
 
       // 處理每種語系的單元格值
       headerKeys.forEach((lang, index) => {
         // 第三個之後 都算語言包代號
         const cellValue = row.getCell(index + 3).value;
+        // 如果是字串才進行 trim
+        const trimmedValue = typeof cellValue === 'string' ? cellValue.trim() : cellValue;
+
         // 忽略空值
-        if (cellValue !== null && cellValue !== undefined) {
+        if (trimmedValue !== null && trimmedValue !== undefined) {
+          // 結構路徑[structure] 為空時
+          if(!structure) {
+            mergeLang[lang][key] = trimmedValue;
+            return
+          }
           // 拆分結構路徑（支援多層巢狀）
           const structureParts = structure.split('.');
           // 指向當前語系的物件
@@ -126,7 +134,7 @@ async function parseLocalExcel(mySheetData, findSheet = []) {
             // 最後一層：放置具體的鍵值對
             if (idx === structureParts.length - 1) {
               currentLangObj[part] = currentLangObj[part] || {};
-              currentLangObj[part][key] = cellValue;
+              currentLangObj[part][key] = trimmedValue;
             } else {
               // 中間層：創建物件結構
               currentLangObj[part] = currentLangObj[part] || {};

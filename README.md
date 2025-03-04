@@ -32,22 +32,39 @@ module.exports = {
 
 excel 表格長這樣
 
-|  key   |  zh-CN	|    en   |
-| ------ | ------ | ------- |
-| login  |   登入  | LOGIN   |
-| logout |   登出  | LOGOUT  |
+| key    | structure	   | zh-CN | en     |
+|--------|--------------|-------|--------|
+| login  | login        | 登入    | LOGIN  |
+| logout | login        | 登出    | LOGOUT |
+| name   | user.columns | 名稱    | LOGOUT |
+
+structure 能夠細分多層結構
 
 會生成下面兩檔案
 =>
 ### zh-CN.js
+`
 export default {
-  login: '登入',
-  logout: '登出',
+  login: {
+    login: '登入',
+    logout: '登出',
+  },
+  user: {
+    columns: {name: '名稱'}
+  }
 };
+`
 
 
 ### en.js
+`
 export default {
-  login: 'LOGIN',
-  logout: 'LOGOUT',
+  login: {
+    login: 'LOGIN',
+    logout: 'LOGOUT',
+  },
+  user: {
+    columns: {name: 'Name'}
+  }
 };
+`
