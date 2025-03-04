@@ -2,6 +2,7 @@ const fs = require("fs");
 const { getGoogleExcel, parseGoogleExcel, getLocalExcel, parseLocalExcel } = require("./parseExcel");
 const deleteDir = require("./deleteDir");
 const mkDirByPathSync = require("./mkdir");
+const { checkI18nConfig } = require('./configValidator');
 const { genCodeByObj, genCodeByArrayObj  } = require("./genCode");
 const defaultConfig = require("./config");
 const _ = require("lodash");
@@ -18,7 +19,7 @@ const _ = require("lodash");
 async function coreForGoogle(option = {}) {
   const config = Object.assign(defaultConfig, option); // 全局變數
   //判斷
-  checkConfig(config);
+  checkI18nConfig(option, option.mode);
   await deleteDir(config.distFolder); // 除指定資料夾
   await getGoogleExcel(config).then(async mySheet => {
     if(config.sheet.constructor === Object) {
@@ -52,15 +53,36 @@ async function coreForGoogle(option = {}) {
  * @date 2023-05-20 */
 async function coreForLocal(option = {}) {
   const config = Object.assign(defaultConfig, option); // 全局變數
-  checkConfig(config);
-  await deleteDir(config.distFolder); // 除指定資料夾
-  const { sheet: findSheet } = config;
-  const fileData = await getLocalExcel(config);
-  const fileContent = await parseLocalExcel(fileData, findSheet);
-  await Promise.all(Object.keys(fileContent).map((fileName) => {
-    mkFile(config.distFolder, genCodeByObj(fileContent[fileName]), fileName);
-    return fileName;
-  }));
+  try {
+    checkI18nConfig(option, option.mode);
+    await deleteDir(config.distFolder); // 除指定資料夾
+    const workbook = await getLocalExcel(config);
+    const result = await parseLocalExcel(workbook, config.sheet);
+    console.log(JSON.stringify(result, null, 4));
+    console.log('==omega==', result);
+    // 並行生成語言檔案，使用 Promise.allSettled 提高容錯性
+    const fileCreationTasks = Object.keys(result).map(async(fileName) => {
+      try {
+        await mkFile(
+            config.distFolder,
+            genCodeByObj(result[fileName]),
+            fileName,
+        );
+      } catch (fileError) {
+        console.error(`文件 ${fileName} 生成失敗:`, fileError);
+      }
+    });
+
+    // 等待所有檔案處理完成
+    await Promise.allSettled(fileCreationTasks);
+    console.log('語言檔案生成完成 🎉');
+  } catch (error) {
+    console.error('配置驗證失敗:', error.message);
+    if (error.missingFields) {
+      console.error('缺失欄位:', error.missingFields);
+    }
+    process.exit(1);
+  }
 }
 
 /**
@@ -82,25 +104,6 @@ async function mkFile(distPath, content, fileName) {
       console.log(`Write operation complete 💪🤗🤗.  ${distPath}/${fileName}.js`);
     }
   });
-}
-
-/**
- * @brief 檢測config 參數是否有誤
- * @date 2020-08-05 */
-function checkConfig(config) {
-  const { mode = 'LOCAL' } = config;
-  const rules = {
-    GOOGLE_SHEET: ['excelProjectToken', 'useApiKey', 'sheet'],
-    LOCAL: ['sourceFilePath', 'distFolder', 'sheet'],
-  };
-
-  const findEmpty = _.pickBy(config, (value, configKey) => {
-    return rules[mode].includes(configKey) && _.isEmpty(value);
-  });
-  if (!_.isEmpty(findEmpty) ) {
-    console.log('請檢查設定檔欄位 不可為空值', findEmpty);
-    throw 'plz check params';
-  }
 }
 
 module.exports = { coreForGoogle, coreForLocal };
