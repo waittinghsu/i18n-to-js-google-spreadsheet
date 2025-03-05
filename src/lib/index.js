@@ -3,7 +3,9 @@ const { getGoogleExcel, parseGoogleExcel, getLocalExcel, parseLocalExcel } = req
 const deleteDir = require("./deleteDir");
 const mkDirByPathSync = require("./mkdir");
 const { checkI18nConfig } = require('./configValidator');
+const { writeJavaScriptFile } = require('./fileWriter');
 const { genCodeByObj, genCodeByArrayObj  } = require("./genCode");
+const DirectoryManager = require('./directoryManager');
 const defaultConfig = require("./config");
 const _ = require("lodash");
 
@@ -55,55 +57,41 @@ async function coreForLocal(option = {}) {
   const config = Object.assign(defaultConfig, option); // 全局變數
   try {
     checkI18nConfig(option, option.mode);
-    await deleteDir(config.distFolder); // 除指定資料夾
+    await DirectoryManager.removeDirectoryRecursively(config.distFolder); // 除指定資料夾
     const workbook = await getLocalExcel(config);
     const result = await parseLocalExcel(workbook, config.sheet);
-    console.log(JSON.stringify(result, null, 4));
-    console.log('==omega==', result);
     // 並行生成語言檔案，使用 Promise.allSettled 提高容錯性
     const fileCreationTasks = Object.keys(result).map(async(fileName) => {
       try {
-        await mkFile(
+        return await writeJavaScriptFile(
             config.distFolder,
             genCodeByObj(result[fileName]),
             fileName,
         );
       } catch (fileError) {
         console.error(`文件 ${fileName} 生成失敗:`, fileError);
+        return { fileName, error: fileError };
       }
     });
 
     // 等待所有檔案處理完成
-    await Promise.allSettled(fileCreationTasks);
-    console.log('語言檔案生成完成 🎉');
+    // 等待所有檔案處理完成
+    const results = await Promise.allSettled(fileCreationTasks);
+
+    const successTasks = results.filter((res) => res.status === 'fulfilled');
+    const failedTasks = results.filter((res) => res.status === 'rejected');
+    console.log('語言檔案生成完成 🎉:', successTasks.length);
+    console.log('語言檔案生成失败👹:', failedTasks.length);
+    failedTasks.forEach((task) => {
+      console.error('文件生成失败👹:', task.reason);
+    });
   } catch (error) {
-    console.error('配置驗證失敗:', error.message);
+    console.error('失敗👹:', error.message);
     if (error.missingFields) {
       console.error('缺失欄位:', error.missingFields);
     }
     process.exit(1);
   }
-}
-
-/**
- * @brief 建立檔案
- * 1. 與外部合併 設定檔 i18n-to-js.config.js
- * 2. checkConfig() 判斷特定欄位正確性
- * 3. 重建folder
- * @param distPath
- * @param content
- * @param fileName
- * @return 無.
- * @date 2020-08-05 */
-async function mkFile(distPath, content, fileName) {
-  await mkDirByPathSync(distPath); // 再重新創建資料夾
-  fs.writeFile(`${distPath}/${fileName}.js`, content, err => {
-    if (err) {
-      console.log(err);
-    } else {
-      console.log(`Write operation complete 💪🤗🤗.  ${distPath}/${fileName}.js`);
-    }
-  });
 }
 
 module.exports = { coreForGoogle, coreForLocal };

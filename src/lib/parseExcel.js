@@ -8,6 +8,15 @@ const ExcelJS = require('exceljs');
 const XLSX =  require('xlsx');
 const _ = require('lodash');
 
+// 做error handler
+class ParseExcelError extends Error {
+  constructor(message, missingFields) {
+    super(message);
+    this.name = 'ConfigValidationError';
+    this.missingFields = missingFields;
+  }
+}
+
 /**
  * @brief 打 google sheet api
  * @return 無.
@@ -89,32 +98,41 @@ async function parseLocalExcel(mySheetData, findSheet = []) {
   const sheetNames = mySheetData.worksheets.map(worksheet => worksheet.name);
 
   // 過濾出存在於 Excel 中的指定工作表
-  const isExistSheets = findSheet.filter(configSheetName =>
-      sheetNames.includes(configSheetName),
-  );
+   const isExistSheets = findSheet.length === 0 ? sheetNames : findSheet.filter((configSheetName) => sheetNames.includes(configSheetName));
+
 
   // 遍歷每個匹配的工作表
   for (const sheetName of isExistSheets) {
     const worksheet = mySheetData.getWorksheet(sheetName);
     // 獲取標題列
     const headerRow = worksheet.getRow(1);
-    // 過濾並處理語系標題（排除 'key' 和空值）
-    const headerKeys = headerRow.values.filter(header => header && header !== 'key').slice(1);
+    // 把首行的key 轉成 map 並對照 index直
+    const headerRowKeyMapIndex = headerRow.values.reduce((map, value, index) => {
+      const trimmedValue = String(value || '').trim();
+      trimmedValue && map.set(trimmedValue, index);
+      return map; // 返回同一個 map 引用
+    }, new Map());
+    // 檢查key是否存在
+    if (!headerRowKeyMapIndex.get('key')) {
+      throw new ParseExcelError('缺少重要欄位', 'key');
+    }
+    // 要產生檔案的 名稱 列表
+    const langNameKeys = headerRow.values.filter((header) => header && header !== 'key' && header !== 'structure');
     // 初始化每種語系的基礎結構
-    headerKeys.forEach(lang => {
+    langNameKeys.forEach(lang => {
       mergeLang[lang] = mergeLang[lang] || {};
     });
     // 遍歷每一列資料（跳過標題列）
     worksheet.eachRow((row, rowNumber) => {
       if (rowNumber === 1) return;
       // 取得當前列的 key 和結構
-      const key = String(row.getCell(1).value || '').trim();
-      const structure = String(row.getCell(2).value || '').trim();
+      const key = String(row.getCell(headerRowKeyMapIndex.get('key')).value || '').trim();
+      const structure = headerRowKeyMapIndex.get('structure') ? String(row.getCell(headerRowKeyMapIndex.get('structure')).value || '').trim() : '';
 
       // 處理每種語系的單元格值
-      headerKeys.forEach((lang, index) => {
+      langNameKeys.forEach((lang, index) => {
         // 第三個之後 都算語言包代號
-        const cellValue = row.getCell(index + 3).value;
+        const cellValue = row.getCell(headerRowKeyMapIndex.get(lang)).value;
         // 如果是字串才進行 trim
         const trimmedValue = typeof cellValue === 'string' ? cellValue.trim() : cellValue;
 
