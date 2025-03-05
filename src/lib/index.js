@@ -60,8 +60,6 @@ async function coreForLocal(option = {}) {
     await DirectoryManager.removeDirectoryRecursively(config.distFolder); // 除指定資料夾
     const workbook = await getLocalExcel(config);
     const result = await parseLocalExcel(workbook, config.sheet);
-    console.log(JSON.stringify(result, null, 4));
-    console.log('==omega==', result);
     // 並行生成語言檔案，使用 Promise.allSettled 提高容錯性
     const fileCreationTasks = Object.keys(result).map(async(fileName) => {
       try {
