@@ -130,7 +130,7 @@ async function parseLocalExcel(mySheetData, findSheet = []) {
       // 處理每種語系的單元格值
       langNameKeys.forEach((lang, index) => {
         // 第三個之後 都算語言包代號
-        const cellValue = row.getCell(headerRowKeyMapIndex.get(lang)).value;
+        const cellValue = row.getCell(headerRowKeyMapIndex.get(lang)).text;
         // 如果是字串才進行 trim
         const trimmedValue = typeof cellValue === 'string' ? cellValue.trim() : cellValue;
 
