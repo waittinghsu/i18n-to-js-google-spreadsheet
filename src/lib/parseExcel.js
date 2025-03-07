@@ -5,7 +5,6 @@ const {
   GoogleSpreadsheetRow,
 } = require('google-spreadsheet');
 const ExcelJS = require('exceljs');
-const XLSX =  require('xlsx');
 const _ = require('lodash');
 
 // 做error handler
@@ -99,7 +98,6 @@ async function parseLocalExcel(mySheetData, findSheet = []) {
 
   // 過濾出存在於 Excel 中的指定工作表
    const isExistSheets = findSheet.length === 0 ? sheetNames : findSheet.filter((configSheetName) => sheetNames.includes(configSheetName));
-
 
   // 遍歷每個匹配的工作表
   for (const sheetName of isExistSheets) {

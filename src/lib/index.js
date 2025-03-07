@@ -1,7 +1,5 @@
 const fs = require("fs");
 const { getGoogleExcel, parseGoogleExcel, getLocalExcel, parseLocalExcel } = require("./parseExcel");
-const deleteDir = require("./deleteDir");
-const mkDirByPathSync = require("./mkdir");
 const { checkI18nConfig } = require('./configValidator');
 const { writeJavaScriptFile } = require('./fileWriter');
 const { genCodeByObj, genCodeByArrayObj  } = require("./genCode");
@@ -22,13 +20,13 @@ async function coreForGoogle(option = {}) {
   const config = Object.assign(defaultConfig, option); // 全局變數
   //判斷
   checkI18nConfig(option, option.mode);
-  await deleteDir(config.distFolder); // 除指定資料夾
+  await DirectoryManager.removeDirectoryRecursively(config.distFolder); // 除指定資料夾
   await getGoogleExcel(config).then(async mySheet => {
     if(config.sheet.constructor === Object) {
       await Promise.all( _.map(config.sheet, async (findSheet, path) => {
         await parseGoogleExcel(mySheet, findSheet).then(i18ns => {
           _.forEach(i18ns, (fileInfo, fileName) => {
-            mkFile(`${config.distFolder}/${path}`, genCodeByArrayObj(fileInfo), fileName);
+            writeJavaScriptFile(`${config.distFolder}/${path}`, genCodeByArrayObj(fileInfo), fileName);
           });
         });
         return findSheet;
@@ -37,7 +35,7 @@ async function coreForGoogle(option = {}) {
     if(config.sheet.constructor === Array || config.sheet.constructor === String) {
         await parseGoogleExcel(mySheet, config.sheet).then((i18ns) => {
           _.forEach(i18ns, (fileInfo, fileName) => {
-            mkFile(config.distFolder, genCodeByArrayObj(fileInfo), fileName);
+            writeJavaScriptFile(config.distFolder, genCodeByArrayObj(fileInfo), fileName);
           });
         });
     }

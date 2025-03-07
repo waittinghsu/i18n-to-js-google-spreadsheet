@@ -28,8 +28,8 @@ function checkI18nConfig(config, mode = 'LOCAL') {
     config[field] === undefined ||
 			config[field] === null ||
 			(typeof config[field] === 'string' && config[field].trim() === '') ||
-			(Array.isArray(config[field]) && config[field].length === 0) ||
-			(typeof config[field] === 'object' && Object.keys(config[field]).length === 0),
+			// (Array.isArray(config[field]) && config[field].length === 0) ||
+			(Object.prototype.toString.call(config[field])  === 'object Object' && Object.keys(config[field]).length === 0),
   );
 
   // 如果有缺失欄位，拋出錯誤
