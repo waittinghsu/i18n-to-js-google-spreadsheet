@@ -1,11 +1,6 @@
 // google-spreadsheet modules 宣告
-const {
-  GoogleSpreadsheet,
-  GoogleSpreadsheetWorksheet,
-  GoogleSpreadsheetRow,
-} = require('google-spreadsheet');
+const { GoogleSpreadsheet } = require('google-spreadsheet');
 const ExcelJS = require('exceljs');
-const _ = require('lodash');
 
 // 做error handler
 class ParseExcelError extends Error {
@@ -27,47 +22,120 @@ async function getGoogleExcel(config) {
   console.log('google sheet api 擷取完成 ..');
   return mySheet;
 }
+/**
+ * 設置物件的深層屬性值
+ * @param {Object} obj - 目標物件
+ * @param {string} path - 屬性路徑（用點號分隔）
+ * @param {any} value - 要設置的值
+ */
+function setDeepValue(obj, path, value) {
+  // 拆分結構路徑（支援多層巢狀）
+  const keys = path.split('.');
+  // 指向當前語系的物件
+  let current = obj;
+  // 動態創建巢狀結構
+  for (let i = 0; i < keys.length - 1; i++) {
+    const key = keys[i];
+    current[key] = current[key] || {};
+    current = current[key];
+  }
+
+  current[keys[keys.length - 1]] = value;
+}
 
 /**
- * @brief 解析Excel
- * Promise 搭配 map 用法 讓async await運作
- * 1. 擷取表頭 建立 output 檔名key 預設值
- * 2. getRows 建立多國語系mapping 物件
- * @return {Object}  { en: {}, 'zh-CN': {} }
- * @date 2020-07-31 */
+ * 解析 Google Sheet 數據並轉換為多層次語言結構
+ * @param {GoogleSpreadsheet} mySheet - Google Sheet 實例
+ * @param {string[]|string} findSheet - 要處理的工作表名稱
+ * @returns {Promise<Object>} 解析後的多層次語言物件
+ */
 async function parseGoogleExcel(mySheet, findSheet = []) {
-  const output = {}; // { en: {}, 'zh-CN': {} }
-  await Promise.all(
-    _.map(mySheet.sheetsByIndex, async (sheet) => {
-      if (findSheet.includes(sheet.title)) {
-        // 取得表頭 設定 output 預設值 todo 這邊跑了兩次 不憂之後優化
-        await sheet.loadHeaderRow().then(() => {
-          // todo 物件版本 key唯一
-          // _.filter(sheet.headerValues, text => text !== 'key').forEach(fileKey => (output[fileKey] = {}));
-          // todo 陣列版本 全塞
-          _.filter(sheet.headerValues, (text) => text !== "key").forEach(
-              (fileKey) => (output[fileKey] = []),
-          );
-          // _.filter(sheet.headerValues, text => text !== 'key').forEach(fileKey => (output[fileKey] = []));
+  try {
+    const mergeLang = {};
+
+    // 標準化工作表清單
+    const sheetNames = mySheet.sheetsByIndex.map(sheet => sheet.title);
+    const sheetsToProcess = findSheet.length === 0
+        ? sheetNames
+        : findSheet.filter(name => {
+          const exists = sheetNames.includes(name);
+          if (!exists) {
+            console.warn(`警告: 找不到工作表 "${name}"`);
+          }
+          return exists;
         });
-        // 取得列表資料
-        await sheet.getRows().then((sheetData) => {
-          _.forEach(sheetData, (row, index) => {
-            if (row.key) {
-              _.map(output, (fileCollection, fileKey) => {
-                // todo 物件版本 key唯一
-                // fileCollection[row.key] = row[fileKey];
-                // todo 陣列版本 全塞
-                fileCollection.push({ key: row.key, text: row[fileKey] });
-              });
-            }
-          });
-        });
+
+    if (sheetsToProcess.length === 0) {
+      throw new ParseExcelError('沒有可處理的工作表');
+    }
+
+    // 按順序處理每個工作表
+    for (const sheetName of sheetsToProcess) {
+      const sheet = mySheet.sheetsByTitle[sheetName];
+      await sheet.loadHeaderRow();
+
+      // 驗證表頭
+      const headers = sheet.headerValues;
+      if (!headers.includes('key')) {
+        throw new ParseExcelError(`工作表 ${sheetName} 缺少必要欄位 'key'`);
       }
-      return sheet;
-    }),
-  );
-  return output;
+
+      // 取得語言代碼列表（排除特殊欄位）
+      const langKeys = headers.filter(header => header && header !== 'key' && header !== 'structure');
+
+      // 初始化語言結構
+      langKeys.forEach(lang => {
+        if (!mergeLang[lang]) mergeLang[lang] = {};
+      });
+
+      // 處理工作表的所有行
+      const rows = await sheet.getRows();
+      for (let rowIndex = 0; rowIndex < rows.length; rowIndex++) {
+        const row = rows[rowIndex];
+        const key = String(row.key || '').trim();
+
+        if (!key) {
+          console.warn(`警告: ${sheetName} 第 ${rowIndex + 2} 行缺少 key`);
+          continue;
+        }
+
+        const structure = String(row.structure || '').trim();
+
+        // 處理每種語言的翻譯
+        for (const lang of langKeys) {
+          const value = row[lang];
+          if (value === null || value === undefined) continue;
+
+          const trimmedValue = typeof value === 'string' ? value.trim() : value;
+
+          if (!structure) {
+            mergeLang[lang][key] = trimmedValue;
+          } else {
+            setDeepValue(mergeLang[lang], `${structure}.${key}`, trimmedValue);
+          }
+        }
+      }
+
+      console.log(`✓ 完成工作表 "${sheetName}" 的處理`);
+    }
+
+    // 驗證輸出
+    const hasContent = Object.values(mergeLang).some(lang =>
+        Object.keys(lang).length > 0
+    );
+
+    if (!hasContent) {
+      throw new ParseExcelError('解析結果為空');
+    }
+
+    return mergeLang;
+
+  } catch (error) {
+    console.error('解析 Google Sheet 失敗:', error.message);
+    throw error instanceof ParseExcelError
+        ? error
+        : new ParseExcelError(`解析失敗: ${error.message}`);
+  }
 }
 
 /**
@@ -141,22 +209,7 @@ async function parseLocalExcel(mySheetData, findSheet = []) {
             mergeLang[lang][key] = trimmedValue;
             return
           }
-          // 拆分結構路徑（支援多層巢狀）
-          const structureParts = structure.split('.');
-          // 指向當前語系的物件
-          let currentLangObj = mergeLang[lang];
-          // 動態創建巢狀結構
-          structureParts.forEach((part, idx) => {
-            // 最後一層：放置具體的鍵值對
-            if (idx === structureParts.length - 1) {
-              currentLangObj[part] = currentLangObj[part] || {};
-              currentLangObj[part][key] = trimmedValue;
-            } else {
-              // 中間層：創建物件結構
-              currentLangObj[part] = currentLangObj[part] || {};
-              currentLangObj = currentLangObj[part];
-            }
-          });
+          setDeepValue(mergeLang[lang], `${structure}.${key}`, trimmedValue);
         }
       });
     });

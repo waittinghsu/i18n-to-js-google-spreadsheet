@@ -2,44 +2,40 @@ const fs = require("fs");
 const { getGoogleExcel, parseGoogleExcel, getLocalExcel, parseLocalExcel } = require("./parseExcel");
 const { checkI18nConfig } = require('./configValidator');
 const { writeJavaScriptFile } = require('./fileWriter');
-const { genCodeByObj, genCodeByArrayObj  } = require("./genCode");
+const { genCodeByObj } = require("./genCode");
 const DirectoryManager = require('./directoryManager');
 const defaultConfig = require("./config");
-const _ = require("lodash");
+
 
 /**
- * @brief 核心 controller 程式流程
- * 1. 與外部合併 設定檔 i18n-to-js.config.js
- * 2. checkConfig() 判斷特定欄位正確性
- * 3. 重建folder
- * @param option 取得當前目錄下的設定黨 做合併
- * @return 無.
- * @author 作者名稱 (spidergod23@gmail.com或P0029)
- * @date 2020-08-05 */
+ * 核心處理函數
+ * @param {Object} option - 配置選項
+ */
 async function coreForGoogle(option = {}) {
-  const config = Object.assign(defaultConfig, option); // 全局變數
-  //判斷
-  checkI18nConfig(option, option.mode);
-  await DirectoryManager.removeDirectoryRecursively(config.distFolder); // 除指定資料夾
-  await getGoogleExcel(config).then(async mySheet => {
-    if(config.sheet.constructor === Object) {
-      await Promise.all( _.map(config.sheet, async (findSheet, path) => {
-        await parseGoogleExcel(mySheet, findSheet).then(i18ns => {
-          _.forEach(i18ns, (fileInfo, fileName) => {
-            writeJavaScriptFile(`${config.distFolder}/${path}`, genCodeByArrayObj(fileInfo), fileName);
-          });
-        });
-        return findSheet;
-      }));
-    }
-    if(config.sheet.constructor === Array || config.sheet.constructor === String) {
-        await parseGoogleExcel(mySheet, config.sheet).then((i18ns) => {
-          _.forEach(i18ns, (fileInfo, fileName) => {
-            writeJavaScriptFile(config.distFolder, genCodeByArrayObj(fileInfo), fileName);
-          });
-        });
-    }
-  })
+  try {
+    const config = Object.assign({}, defaultConfig, option);
+
+    // 配置驗證
+    checkI18nConfig(option, option.mode);
+
+    // 清理目標目錄
+    await DirectoryManager.removeDirectoryRecursively(config.distFolder);
+
+    // 獲取並處理 Google Sheet 數據
+    const mySheet = await getGoogleExcel(config);
+    const i18ns = await parseGoogleExcel(mySheet, config.sheet);
+
+    // 生成檔案
+    Object.entries(i18ns).forEach(([fileName, fileInfo]) => {
+      writeJavaScriptFile(config.distFolder, genCodeByObj(fileInfo), fileName);
+    });
+
+    console.log('✅ 多語言檔案生成完成');
+
+  } catch (error) {
+    console.error('❌ 處理失敗:', error.message);
+    throw error;
+  }
 }
 
 /**
