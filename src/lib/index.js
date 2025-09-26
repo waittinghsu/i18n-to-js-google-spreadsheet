@@ -26,8 +26,9 @@ async function coreForGoogle(option = {}) {
     const i18ns = await parseGoogleExcel(mySheet, config.sheet);
 
     // 生成檔案
+    const outputFormat = config.outputFormat || 'js'; // 向後相容：預設使用 js 格式
     Object.entries(i18ns).forEach(([fileName, fileInfo]) => {
-      writeJavaScriptFile(config.distFolder, genCodeByObj(fileInfo), fileName);
+      writeJavaScriptFile(config.distFolder, genCodeByObj(fileInfo, outputFormat), fileName, outputFormat);
     });
 
     console.log('✅ 多語言檔案生成完成');
@@ -55,12 +56,14 @@ async function coreForLocal(option = {}) {
     const workbook = await getLocalExcel(config);
     const result = await parseLocalExcel(workbook, config.sheet);
     // 並行生成語言檔案，使用 Promise.allSettled 提高容錯性
+    const outputFormat = config.outputFormat || 'js'; // 向後相容：預設使用 js 格式
     const fileCreationTasks = Object.keys(result).map(async(fileName) => {
       try {
         return await writeJavaScriptFile(
             config.distFolder,
-            genCodeByObj(result[fileName]),
+            genCodeByObj(result[fileName], outputFormat),
             fileName,
+            outputFormat
         );
       } catch (fileError) {
         console.error(`文件 ${fileName} 生成失敗:`, fileError);
