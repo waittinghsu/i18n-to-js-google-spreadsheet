@@ -9,6 +9,9 @@
   ],
   "scripts": {
     "pretty": "prettier --write \"./**/*.{js,jsx,json}\"",
+    "release:patch": "npm version patch && npm publish && git push origin master --tags",
+    "release:minor": "npm version minor && npm publish && git push origin master --tags",
+    "release:major": "npm version major && npm publish && git push origin master --tags",
     "test": ""
   },
   "bin": {
